@@ -5,12 +5,12 @@
 ;--------------------------------------------;
 
 lba_packet:
-    db 0x10               ; Taille de la structure (16 octets)
-    db 0                  ; Réservé
-    dw 4                  ; Nombre de secteurs à lire
+    db 0x10               ; Size of struct (16 bytes)
+    db 0                  ; Reserve
+    dw 4                  ; Number of sector to read
     dw KERNEL_ADDR        ; Offset (0x1000)
     dw 0x0000             ; Segment (ES = 0)
-    dq 1                  ; LBA = secteur 1 (le kernel commence là)
+    dq 1                  ; LBA = sector 1
 
 ORG 0x7C00
 BITS 16
@@ -31,8 +31,6 @@ start:
 
     mov si, SUCCESS_LOAD_KERNEL_MSG
     call print16
-
-    ; jmp $ ; POUR TESTER
     
     cli                                ; Disable BIOS interruptions
     
@@ -57,12 +55,10 @@ load_kernel:
     int 0x13
     jc .read_failed
     ret
-
 .read_failed:
     mov si, FAILED_LOAD_KERNEL_MSG
     call print16
     jmp $
-
 
 print16:
     mov ah, 0x0E
@@ -74,14 +70,12 @@ print16:
     je .new_line
     int 0x10
     jmp .loop
-
 .new_line:
     mov al, 0x0D
     int 0x10
     mov al, 0x0A
     int 0x10
     jmp .loop
-
 .done:
     ret
 
@@ -101,23 +95,23 @@ enable_a20:
 
 gdt_start:
 gdt_null:
-    dq 0                               ; Descripteur null
+    dq 0
 
 gdt_data:
-    dw 0xFFFF                          ; Limit
-    dw 0x0000                          ; Base (15:0)
-    db 0x00                            ; Base (23:16)
-    db 10010010b                       ; Access byte (code segment)
-    db 11001111b                       ; Flags + Limit (19:16)
-    db 0x00                            ; Base (31:24)
+    dw 0xFFFF
+    dw 0x0000
+    db 0x00
+    db 10010010b
+    db 11001111b
+    db 0x00
 
 gdt_code:
-    dw 0xFFFF                          ; Limit
-    dw 0x0000                          ; Base (15:0)
-    db 0x00                            ; Base (23:16)
-    db 10011010b                       ; Access byte (code segment)
-    db 11001111b                       ; Flags + Limit (19:16)
-    db 0x00                            ; Base (31:24)
+    dw 0xFFFF
+    dw 0x0000
+    db 0x00
+    db 10011010b
+    db 11001111b
+    db 0x00
 gdt_end:
 
 data_segment equ gdt_data - gdt_null
@@ -129,14 +123,14 @@ gdt_descriptor:
 
 
 clear_screen:
-    mov ebx, 0xB8000         ; Address of video memory
-    mov ecx, 2000            ; 80 * 25 = 2000 characters (80 columns, 25 rows)
+    mov ebx, 0xB8000                   ; Address of video memory
+    mov ecx, 2000                      ; 80 * 25 = 2000 characters (80 columns, 25 rows)
 
 clear_loop:
-    mov byte [ebx], 0x20     ; Place a space (0x20) in the current character
-    mov byte [ebx+1], 0x0F   ; White text on black background (0x0F)
-    add ebx, 2               ; Move to the next character (2 bytes per character)
-    loop clear_loop          ; Repeat for 2000 characters
+    mov byte [ebx], 0x20               ; Place a space (0x20) in the current character
+    mov byte [ebx+1], 0x0F             ; White text on black background (0x0F)
+    add ebx, 2                         ; Move to the next character (2 bytes per character)
+    loop clear_loop                    ; Repeat for 2000 characters
     ret
 
 print32:
@@ -161,7 +155,7 @@ protected_mode_start:
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov esp, 0x90000     ; New stack higher in memory
+    mov esp, 0x90000                   ; New stack higher in memory
 
     ; call clear_screen
 

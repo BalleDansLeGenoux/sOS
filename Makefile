@@ -10,7 +10,7 @@ bin/boot.bin: boot/bootloader.asm
 
 bin/kernel.bin: kernel/kernel.c
 	i686-elf-gcc -ffreestanding -m32 -c kernel/kernel.c -o bin/kernel.o
-	i686-elf-ld -Ttext 0x1000 --oformat binary bin/kernel.o -o bin/kernel.bin
+	i686-elf-ld -T link/linker.ld bin/kernel.o -o bin/kernel.bin
 
 clean:
 	rm -rf bin/*
