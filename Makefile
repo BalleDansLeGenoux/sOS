@@ -1,18 +1,61 @@
-all: bin/os.img
-	qemu-system-x86_64 -drive format=raw,file=bin/os.img
+#--------------------#
+#        Main        #
+#--------------------#
 
-bin/os.img: bin/boot.bin bin/kernel.bin
-	dd if=bin/boot.bin of=bin/os.img bs=512 count=1
-	dd if=bin/kernel.bin of=bin/os.img bs=512 seek=1
+all: clean bin/floppy.img
 
-bin/boot.bin: boot/bootloader.asm
-	nasm -f bin boot/bootloader.asm -o bin/boot.bin
+run: all
+	qemu-system-x86_64 -drive file=bin/floppy.img,format=raw,if=floppy
 
-bin/kernel.bin: kernel/kernel.c
-	i686-elf-gcc -ffreestanding -m32 -c kernel/kernel.c -o bin/kernel.o
-	i686-elf-ld -T link/linker.ld bin/kernel.o -o bin/kernel.bin
+debug: all
+	qemu-system-x86_64 -m 128 -drive format=raw,file=bin/floppy.img -M pc -d int,guest_errors -no-reboot
+
+
+#----------------------#
+#      Bootloader      #
+#----------------------#
+
+bin/boot.bin: boot/first_stage/boot.asm | bin
+	nasm -f bin $< -o $@
+
+bin/second_boot.bin: boot/second_stage/second_boot.asm | bin
+	nasm -f bin $< -o $@
+
+
+#-------------------------------------#
+#        Kernel + Second stage        #
+#-------------------------------------#
+
+bin/kernel.o: kernel/kernel.c | bin
+	i686-elf-gcc -nostdlib -nostdinc -ffreestanding -c $< -o $@
+
+bin/kernel_entry.o: kernel/kernel_entry.asm | bin
+	nasm -f elf $< -o $@
+
+bin/kernel.bin: bin/kernel_entry.o bin/kernel.o | bin
+	i686-elf-ld -T link/linker.ld -o $@ $^ --oformat binary
+
+
+#---------------------#
+#        Image        #
+#---------------------#
+
+bin/floppy.img: bin/boot.bin bin/second_boot.bin bin/kernel.bin
+	dd if=/dev/zero of=$@ bs=512 count=2880
+
+	dd if=bin/boot.bin of=$@ conv=notrunc bs=512 seek=0
+
+	dd if=bin/second_boot.bin of=$@ conv=notrunc bs=512 seek=1
+
+	dd if=bin/kernel.bin of=$@ conv=notrunc bs=512 seek=2
+
+
+#---------------------#
+#        Other        #
+#---------------------#
 
 clean:
 	rm -rf bin/*
 
-
+bin:
+	mkdir -p bin

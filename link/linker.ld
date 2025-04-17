@@ -2,7 +2,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = 0x1000; /* Adresse du noyau en mémoire après le bootloader */
+    . = 0x3000; /* Adresse du noyau en mémoire après le bootloader */
 
     .text : {
         *(.text)          /* Section pour le code */
@@ -14,6 +14,10 @@ SECTIONS
 
     .bss : {
         *(.bss)           /* Section pour les données non initialisées */
+    }
+
+    .rodata : {
+        *(.rodata)
     }
 
     /DISCARD/ : {
