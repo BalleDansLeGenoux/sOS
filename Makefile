@@ -1,61 +1,83 @@
 #--------------------#
+#        Vars        #
+#--------------------#
+
+# Directories
+SRC_DIR         := src
+BOOT_DIR        := boot
+KERNEL_DIR      := kernel
+LINKER_DIR      := link
+BIN_DIR         := bin
+
+# Files
+BOOT_FIRST_STAGE := $(BOOT_DIR)/first_stage/boot.asm
+BOOT_SECOND_STAGE := $(BOOT_DIR)/second_stage/second_boot.asm
+KERNEL_C         := $(KERNEL_DIR)/kernel.c
+KERNEL_ENTRY_ASM := $(KERNEL_DIR)/kernel_entry.asm
+KERNEL_LINKER_SCRIPT := $(LINKER_DIR)/linker.ld
+
+# Output Files
+BOOT_BIN        := $(BIN_DIR)/boot.bin
+SECOND_BOOT_BIN := $(BIN_DIR)/second_boot.bin
+KERNEL_O        := $(BIN_DIR)/kernel.o
+KERNEL_ENTRY_O  := $(BIN_DIR)/kernel_entry.o
+KERNEL_BIN      := $(BIN_DIR)/kernel.bin
+FLOPPY_IMG      := $(BIN_DIR)/floppy.img
+
+#--------------------#
 #        Main        #
 #--------------------#
 
-all: clean bin/floppy.img
+all: clean $(FLOPPY_IMG)
 
 run: all
-	qemu-system-x86_64 -drive file=bin/floppy.img,format=raw,if=floppy
+	qemu-system-x86_64 -drive file=$(FLOPPY_IMG),format=raw,if=floppy
 
 debug: all
-	qemu-system-x86_64 -m 128 -drive format=raw,file=bin/floppy.img -M pc -d int,guest_errors -no-reboot
-
+	qemu-system-x86_64 -drive file=$(FLOPPY_IMG),format=raw,if=floppy -d int,guest_errors -no-reboot
 
 #----------------------#
 #      Bootloader      #
 #----------------------#
 
-bin/boot.bin: boot/first_stage/boot.asm | bin
+$(BOOT_BIN): $(BOOT_FIRST_STAGE) | $(BIN_DIR)
 	nasm -f bin $< -o $@
 
-bin/second_boot.bin: boot/second_stage/second_boot.asm | bin
+$(SECOND_BOOT_BIN): $(BOOT_SECOND_STAGE) | $(BIN_DIR)
 	nasm -f bin $< -o $@
 
+#----------------------#
+#        Kernel        #
+#----------------------#
 
-#-------------------------------------#
-#        Kernel + Second stage        #
-#-------------------------------------#
-
-bin/kernel.o: kernel/kernel.c | bin
+$(KERNEL_O): $(KERNEL_C) | $(BIN_DIR)
 	i686-elf-gcc -nostdlib -nostdinc -ffreestanding -c $< -o $@
 
-bin/kernel_entry.o: kernel/kernel_entry.asm | bin
+$(KERNEL_ENTRY_O): $(KERNEL_ENTRY_ASM) | $(BIN_DIR)
 	nasm -f elf $< -o $@
 
-bin/kernel.bin: bin/kernel_entry.o bin/kernel.o | bin
-	i686-elf-ld -T link/linker.ld -o $@ $^ --oformat binary
-
+$(KERNEL_BIN): $(KERNEL_ENTRY_O) $(KERNEL_O) | $(BIN_DIR)
+	i686-elf-ld -T $(KERNEL_LINKER_SCRIPT) -o $@ $^ --oformat binary
 
 #---------------------#
 #        Image        #
 #---------------------#
 
-bin/floppy.img: bin/boot.bin bin/second_boot.bin bin/kernel.bin
+$(FLOPPY_IMG): $(BOOT_BIN) $(SECOND_BOOT_BIN) $(KERNEL_BIN)
 	dd if=/dev/zero of=$@ bs=512 count=2880
 
-	dd if=bin/boot.bin of=$@ conv=notrunc bs=512 seek=0
+	dd if=$(BOOT_BIN) of=$@ conv=notrunc bs=512 seek=0
 
-	dd if=bin/second_boot.bin of=$@ conv=notrunc bs=512 seek=1
+	dd if=$(SECOND_BOOT_BIN) of=$@ conv=notrunc bs=512 seek=1
 
-	dd if=bin/kernel.bin of=$@ conv=notrunc bs=512 seek=2
-
+	dd if=$(KERNEL_BIN) of=$@ conv=notrunc bs=512 seek=2
 
 #---------------------#
 #        Other        #
 #---------------------#
 
 clean:
-	rm -rf bin/*
+	rm -rf $(BIN_DIR)/*
 
-bin:
-	mkdir -p bin
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
