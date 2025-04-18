@@ -70,7 +70,7 @@ $(FLOPPY_IMG): $(BOOT_BIN) $(SECOND_BOOT_BIN) $(KERNEL_BIN)
 
 	dd if=$(SECOND_BOOT_BIN) of=$@ conv=notrunc bs=512 seek=1
 
-	dd if=$(KERNEL_BIN) of=$@ conv=notrunc bs=512 seek=2
+	dd if=$(KERNEL_BIN) of=$@ conv=notrunc bs=512 seek=3
 
 #---------------------#
 #        Other        #

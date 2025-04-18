@@ -20,7 +20,7 @@ start:
 
     ; Load the kernel from disk.
     mov bx, KERNEL_ADDR                ; Load address where the kernel will be stored in memory.
-    mov cl, 0x03                       ; Disk sector number where the kernel starts.
+    mov cl, 0x04                       ; Disk sector number where the kernel starts.
     mov dh, 2                          ; Number of sectors to read.
     mov dl, [BOOT_DRIVE]               ; Select the disk or image from which to load.
     call disk_load                     ; Load the kernel into memory using BIOS interrupt.
