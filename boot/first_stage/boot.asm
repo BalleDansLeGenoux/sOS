@@ -51,5 +51,21 @@ WELLCOME_MSG: db "[FIRST STAGE BOOTLOADER]", ENDL, 0
 LOADING_MSG: db " Loading second stage ...", ENDL, 0
 SUCCESS_MSG: db " Success to load second stage !", ENDL, 0
 
+times 446-($-$$) db 0   ; Fill until partitions table
+
+; Partition table (1 FAT32 start at sector 20)
+; Each entry is 16 bytes
+; This is 1 FAT32 partition and 3 void
+
+    ; Partition 1
+    db 0x80              ; Bootable
+    db 0x01, 0x01, 0x00  ; CHS start (random values)
+    db 0x0B              ; Type FAT32 CHS (0x0C for FAT32 LBA)
+    db 0xFE, 0xFF, 0xFF  ; CHS end (random values)
+    dd 20                ; start LBA (sector 20)
+    dd 100000            ; Size (in sectors)
+
+    times 3*16 db 0      ; 3 others are void
+
 times 510 - ($-$$) db 0
 dw 0xAA55

@@ -10,10 +10,10 @@ LINKER_DIR      := link
 BIN_DIR         := bin
 
 # Files
-BOOT_FIRST_STAGE := $(BOOT_DIR)/first_stage/boot.asm
-BOOT_SECOND_STAGE := $(BOOT_DIR)/second_stage/second_boot.asm
-KERNEL_C         := $(KERNEL_DIR)/kernel.c
-KERNEL_ENTRY_ASM := $(KERNEL_DIR)/kernel_entry.asm
+BOOT_FIRST_STAGE     := $(BOOT_DIR)/first_stage/boot.asm
+BOOT_SECOND_STAGE    := $(BOOT_DIR)/second_stage/second_boot.asm
+KERNEL_C             := $(KERNEL_DIR)/kernel.c
+KERNEL_ENTRY_ASM     := $(KERNEL_DIR)/kernel_entry.asm
 KERNEL_LINKER_SCRIPT := $(LINKER_DIR)/linker.ld
 
 # Output Files
@@ -22,19 +22,19 @@ SECOND_BOOT_BIN := $(BIN_DIR)/second_boot.bin
 KERNEL_O        := $(BIN_DIR)/kernel.o
 KERNEL_ENTRY_O  := $(BIN_DIR)/kernel_entry.o
 KERNEL_BIN      := $(BIN_DIR)/kernel.bin
-FLOPPY_IMG      := $(BIN_DIR)/floppy.img
+DISK_IMG        := $(BIN_DIR)/disk.img
 
 #--------------------#
 #        Main        #
 #--------------------#
 
-all: clean $(FLOPPY_IMG)
+all: clean $(DISK_IMG)
 
 run: all
-	qemu-system-x86_64 -drive file=$(FLOPPY_IMG),format=raw,if=floppy
+	qemu-system-x86_64 -drive file=$(DISK_IMG),format=raw,if=floppy
 
 debug: all
-	qemu-system-x86_64 -drive file=$(FLOPPY_IMG),format=raw,if=floppy -d int,guest_errors -no-reboot
+	qemu-system-x86_64 -drive file=$(DISK_IMG),format=raw,if=floppy -d int,guest_errors -no-reboot
 
 #----------------------#
 #      Bootloader      #
@@ -63,14 +63,31 @@ $(KERNEL_BIN): $(KERNEL_ENTRY_O) $(KERNEL_O) | $(BIN_DIR)
 #        Image        #
 #---------------------#
 
-$(FLOPPY_IMG): $(BOOT_BIN) $(SECOND_BOOT_BIN) $(KERNEL_BIN)
-	dd if=/dev/zero of=$@ bs=512 count=2880
-
+$(DISK_IMG): $(BOOT_BIN) $(SECOND_BOOT_BIN) $(KERNEL_BIN)
+	dd if=/dev/zero of=$@ bs=512 count=131072
 	dd if=$(BOOT_BIN) of=$@ conv=notrunc bs=512 seek=0
-
 	dd if=$(SECOND_BOOT_BIN) of=$@ conv=notrunc bs=512 seek=1
 
-	dd if=$(KERNEL_BIN) of=$@ conv=notrunc bs=512 seek=3
+	sudo sh -c '\
+		LOOPDEV=$$(losetup -fP --show $@); \
+		echo "Using $$LOOPDEV"; \
+		mkfs.fat -F 32 $${LOOPDEV}p1; \
+		mkdir -p /mnt/tmp; \
+		mount $${LOOPDEV}p1 /mnt/tmp; \
+		cp $(KERNEL_BIN) /mnt/tmp; \
+		umount /mnt/tmp; \
+		losetup -d $${LOOPDEV}; \
+	'
+
+# PDEV=$$(losetup -fP --show $@) -> Map disk image on the next virtual disk free and keep the name of current virtual disk in LOOPDEV
+# echo "Using $$LOOPDEV"         -> Print name of current virtual disk
+# mkfs.fat -F 32 $${LOOPDEV}p1   -> Format FAT32 partition
+# mkdir -p /mnt/tmp              -> Create temporary dir to mount our virtual disk
+# mount $${LOOPDEV}p1 /mnt/tmp   -> Mount our virtual disk
+# cp $(KERNEL_BIN) /mnt/tmp      -> Copy our kernel in our virtual disk
+# umount /mnt/tmp                -> Umount the disk
+# losetup -d $${LOOPDEV}         -> Unmap disk image
+
 
 #---------------------#
 #        Other        #
