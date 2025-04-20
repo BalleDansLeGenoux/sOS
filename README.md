@@ -80,4 +80,26 @@ If you want to learn more about the concepts I've used, here are some useful res
 This project is still in development. The bootloader and protected mode switch are working, and the kernel takes control after these steps. The next steps will include adding features to the kernel, such as process management, I/O handling, and advanced memory management.
 
 
-# !!! Will be updated for second stage !!!
+# Transition to a two-stage bootloader
+
+## Why ?
+
+Most modern operating systems use a two-stage bootloader, like GRUB or similar. It's a common and practical design, and fairly easy to implement once you've created a basic single-stage bootloader.
+
+In my current setup, the bootloader consists of only one stage — it directly loads the kernel. However, this approach is limited by the size of the boot sector (512 bytes), which is not enough for more advanced functionality.
+
+To overcome this limitation, instead of loading the kernel directly, the first-stage bootloader loads a second-stage bootloader, which then loads the kernel. The second stage is not restricted to 512 bytes — it can be much larger (limited only by available disk space), allowing it to perform more complex tasks. For example, if we use a hard disk image instead of a floppy, the second stage can read partition tables or access filesystems.
+
+## New structure
+
+### First stage :
+- Enable A20 line
+- Load the second-stage bootloader into memory using BIOS interrupts
+- Jump to the second stage
+
+### Second stage :
+- Load the kernel into memory using BIOS interrupts
+- Disable hardware interrupts
+- Set up the GDT (Global Descriptor Table) and load it
+- Switch the CPU to protected mode
+- Perform a far jump to the kernel
