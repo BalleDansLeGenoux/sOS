@@ -51,7 +51,7 @@ WELLCOME_MSG: db "[FIRST STAGE BOOTLOADER]", ENDL, 0
 LOADING_MSG: db " Loading second stage ...", ENDL, 0
 SUCCESS_MSG: db " Success to load second stage !", ENDL, 0
 
-times 446-($-$$) db 0   ; Fill until partitions table
+times 0x01BE - ($-$$) db 0   ; Fill until partitions table (0x01BE -> 446)
 
 ; Partition table (1 FAT32 start at sector 20)
 ; Each entry is 16 bytes
@@ -67,5 +67,5 @@ times 446-($-$$) db 0   ; Fill until partitions table
 
     times 3*16 db 0      ; 3 others are void
 
-times 510 - ($-$$) db 0
-dw 0xAA55
+times 0x01FE - ($-$$) db 0 ; 0x01FE -> 510
+dw 0xAA55                  ; Boot signature

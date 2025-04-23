@@ -79,14 +79,14 @@ $(DISK_IMG): $(BOOT_BIN) $(SECOND_BOOT_BIN) $(KERNEL_BIN)
 		losetup -d $${LOOPDEV}; \
 	'
 
-# PDEV=$$(losetup -fP --show $@) -> Map disk image on the next virtual disk free and keep the name of current virtual disk in LOOPDEV
-# echo "Using $$LOOPDEV"         -> Print name of current virtual disk
-# mkfs.fat -F 32 $${LOOPDEV}p1   -> Format FAT32 partition
-# mkdir -p /mnt/tmp              -> Create temporary dir to mount our virtual disk
-# mount $${LOOPDEV}p1 /mnt/tmp   -> Mount our virtual disk
-# cp $(KERNEL_BIN) /mnt/tmp      -> Copy our kernel in our virtual disk
-# umount /mnt/tmp                -> Umount the disk
-# losetup -d $${LOOPDEV}         -> Unmap disk image
+# LOOPDEV=$$(losetup -fP --show $@)      -> Map the disk image to the next available loop device and store the device name in LOOPDEV
+# echo "Using $$LOOPDEV"                 -> Print the name of the loop device being used
+# mkfs.fat -F 32 $${LOOPDEV}p1           -> Format the first partition as FAT32
+# mkdir -p /mnt/tmp                      -> Create a temporary directory to mount the loop device
+# mount $${LOOPDEV}p1 /mnt/tmp           -> Mount the first partition of the loop device
+# cp $(KERNEL_BIN) /mnt/tmp              -> Copy the kernel binary to the mounted partition
+# umount /mnt/tmp                        -> Unmount the partition
+# losetup -d $${LOOPDEV}                 -> Detach the loop device
 
 
 #---------------------#
