@@ -127,15 +127,15 @@ To make this transition, I had several choices to make. First, I had to decide w
 
 ### Stage 1 -> MBR
 
-The MBR is code in ASM, still in 
-
-The MBR table partition is on the sector 0 and start at address `0x01BE`, so I define it in the bootloader (stage 1), it allow us to define 4 partitions, I juste define 1 FAT32 partition and let other at 0.
-
-Now I have a partition table with maximum 4 partitions, my code need to work differenty, instead of load a static second stage on disk, it load sector 0 of the first bootable partition it find in partition table, and then, it jump where it's load.
+Coming soon !
 
 ### Stage 2 -> VBR
 
+Coming soon !
+
 ### Stage 3 -> FAT32 parser to find kernel
+
+Coming soon !
 
 ## 2. Modify Makefile
 
@@ -180,7 +180,7 @@ In partition table, each entry is **16 bytes long**. Here's the structure of a s
 | `0x0C` | 4 bytes | Total Sectors in partition | ✅        |
 
 > **\- Notes:**
-> * At offset `0x00` : The value 0x80 means the partition is bootable, and 0x00 means it is not bootable.
+> * At offset `0x00` : The value `0x80` means the partition is bootable, and `0x00` means it is not bootable.
 > * At offset `0x02` : Bits 6-7 are the upper two bits for the starting cylinder field (offset `0x03`)
 > * At offset `0x06` : Bits 6-7 are the upper two bits for the ending cylinder field (offset `0x07`)
 
