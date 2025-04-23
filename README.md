@@ -115,7 +115,7 @@ To make this transition, I had several choices to make. First, I had to decide w
 
 ## New structure
 
-### Frist stage :
+### First stage :
 * Enable A20 line
 * Load VBR of first bootable partition
 * Jump on VBR if find
@@ -166,23 +166,24 @@ The boot code will load sector 0 of the first bootable partition it finds in the
 
 In partition table, each entry is **16 bytes long**. Here's the structure of a single partition entry:
 
-| Offset | Bytes   | Description                | Usefull ? | 
-| :----- | :------ | :------------------------- | :-------- |
-| `0x00` | 1 byte  | Boot indicator bit flag    | ✅        |
-| `0x01` | 1 byte  | Starting head              | ❌        |
-| `0x02` | 6 bits  | Starting sector            | ❌        |
-| `0x03` | 10 bits | Starting Cylinder          | ❌        |
-| `0x04` | 1 byte  | System ID                  | ✅        |
-| `0x05` | 1 byte  | Ending Head                | ❌        |
-| `0x06` | 6 bits  | Ending Sector              | ❌        |
-| `0x07` | 10 bits | Ending Cylinder            | ❌        |
-| `0x08` | 4 bytes | Relative Sector LBA value  | ✅        |
-| `0x0C` | 4 bytes | Total Sectors in partition | ✅        |
+| Offset | Bytes   | Description                | Useful ? | 
+| :----- | :------ | :------------------------- | :------- |
+| `0x00` | 1 byte  | Boot indicator bit flag    | ✅       |
+| `0x01` | 1 byte  | Starting head              | ❌       |
+| `0x02` | 6 bits  | Starting sector            | ❌       |
+| `0x03` | 10 bits | Starting Cylinder          | ❌       |
+| `0x04` | 1 byte  | System ID                  | ✅       |
+| `0x05` | 1 byte  | Ending Head                | ❌       |
+| `0x06` | 6 bits  | Ending Sector              | ❌       |
+| `0x07` | 10 bits | Ending Cylinder            | ❌       |
+| `0x08` | 4 bytes | Relative Sector LBA value  | ✅       |
+| `0x0C` | 4 bytes | Total Sectors in partition | ✅       |
 
 > **\- Notes:**
 > * At offset `0x00` : The value `0x80` means the partition is bootable, and `0x00` means it is not bootable.
 > * At offset `0x02` : Bits 6-7 are the upper two bits for the starting cylinder field (offset `0x03`)
 > * At offset `0x06` : Bits 6-7 are the upper two bits for the ending cylinder field (offset `0x07`)
+> * CHS values are mostly obsolete; LBA (0x08 offset) is what's used to actually locate the partition.
 
 
 ## FAT32 (File Allocation Table 32 bits)
@@ -200,41 +201,41 @@ In partition table, each entry is **16 bytes long**. Here's the structure of a s
 
 ### VBR (Volume Boot Record)
 
-The VBR parameter the partition, it define size of cluster, and other usefull parameters.
+The VBR parameters the partition, it define size of cluster, and other Useful parameters.
 
 Here's the structure of a FAT32's VBR :
 
-| Offset  | Bytes | Name                    | Description                                 | Usefull ? |
-| :------ | :---- | :---------------------- | :------------------------------------------ | :-------- |
-| `0x000` | 3     | Jump instruction        | Jump to boot code                           | ✅        |
-| `0x003` | 8     | OEM Name                | OS identifier (e.g., "MSDOS5.0")            | ❌        |
-| `0x00B` | 2     | Bytes per sector        | Usually 512                                 | ✅        |
-| `0x00D` | 1     | Sectors per cluster     | Determines cluster size                     | ✅        |
-| `0x00E` | 2     | Reserved sectors        | Before FAT starts                           | ✅        |
-| `0x010` | 1     | Number of FATs          | Normally 2                                  | ✅        |
-| `0x011` | 2     | Root entry count        | 0 for FAT32                                 | ✅        |
-| `0x013` | 2     | Total sectors (16-bit)  | Used if < 65535 sectors total               | ✅        |
-| `0x015` | 1     | Media descriptor        | Media type (F8 = HDD)                       | ⚠️        |
-| `0x016` | 2     | Sectors per FAT (FAT16) | 0 for FAT32                                 | ✅        |
-| `0x018` | 2     | Sectors per track       | Legacy CHS layout                           | ❌        |
-| `0x01A` | 2     | Number of heads         | Legacy CHS layout                           | ❌        |
-| `0x01C` | 4     | Hidden sectors          | Offset of partition start from disk start   | ✅        |
-| `0x020` | 4     | Total sectors (32-bit)  | Used if > 65535 sectors total               | ✅        |
-| `0x024` | 4     | Sectors per FAT (FAT32) | Size of each FAT                            | ✅        |
-| `0x028` | 2     | Flags                   | Used for mirroring FATs                     | ⚠️        |
-| `0x02A` | 2     | FAT version             | 0x0000 expected                             | ✅        |
-| `0x02C` | 4     | Root cluster            | Starting cluster of root dir                | ✅        |
-| `0x030` | 2     | FSInfo sector number    | Sector number of FSInfo                     | ✅        |
-| `0x032` | 2     | Backup boot sector      | Where backup VBR is stored                  | ⚠️        |
-| `0x036` | 12    | Reserved                | Reserved                                    | ❌        |
-| `0x042` | 1     | Drive number            | BIOS ID (80h = HDD)                         | ⚠️        |
-| `0x043` | 1     | Reserved (NT)           | Reserved for Windows                        | ❌        |
-| `0x044` | 1     | Boot signature          | 0x29 = indicates next fields exist          | ⚠️        |
-| `0x045` | 4     | Volume ID               | Random serial number                        | ❌        |
-| `0x049` | 11    | Volume label            | Volume name, padded with spaces             | ❌        |
-| `0x054` | 8     | File system type        | "FAT32 " string                             | ⚠️        |
-| `0x05C` | 420   | Boot code               | Actual bootloader code                      | ✅        |
-| `0x1FE` | 2     | Boot sector signature   | Must be 0x55AA to be recognized as bootable | ✅        |
+| Offset  | Bytes | Name                    | Description                                 | Useful ? |
+| :------ | :---- | :---------------------- | :------------------------------------------ | :------- |
+| `0x000` | 3     | Jump instruction        | Jump to boot code                           | ✅       |
+| `0x003` | 8     | OEM Name                | OS identifier (e.g., "MSDOS5.0")            | ❌       |
+| `0x00B` | 2     | Bytes per sector        | Usually 512                                 | ✅       |
+| `0x00D` | 1     | Sectors per cluster     | Determines cluster size                     | ✅       |
+| `0x00E` | 2     | Reserved sectors        | Before FAT starts                           | ✅       |
+| `0x010` | 1     | Number of FATs          | Normally 2                                  | ✅       |
+| `0x011` | 2     | Root entry count        | 0 for FAT32                                 | ✅       |
+| `0x013` | 2     | Total sectors (16-bit)  | Used if < 65535 sectors total               | ✅       |
+| `0x015` | 1     | Media descriptor        | Media type (F8 = HDD)                       | ⚠️       |
+| `0x016` | 2     | Sectors per FAT (FAT16) | 0 for FAT32                                 | ✅       |
+| `0x018` | 2     | Sectors per track       | Legacy CHS layout                           | ❌       |
+| `0x01A` | 2     | Number of heads         | Legacy CHS layout                           | ❌       |
+| `0x01C` | 4     | Hidden sectors          | Offset of partition start from disk start   | ✅       |
+| `0x020` | 4     | Total sectors (32-bit)  | Used if > 65535 sectors total               | ✅       |
+| `0x024` | 4     | Sectors per FAT (FAT32) | Size of each FAT                            | ✅       |
+| `0x028` | 2     | Flags                   | Used for mirroring FATs                     | ⚠️       |
+| `0x02A` | 2     | FAT version             | 0x0000 expected                             | ✅       |
+| `0x02C` | 4     | Root cluster            | Starting cluster of root dir                | ✅       |
+| `0x030` | 2     | FSInfo sector number    | Sector number of FSInfo                     | ✅       |
+| `0x032` | 2     | Backup boot sector      | Where backup VBR is stored                  | ⚠️       |
+| `0x036` | 12    | Reserved                | Reserved                                    | ❌       |
+| `0x042` | 1     | Drive number            | BIOS ID (80h = HDD)                         | ⚠️       |
+| `0x043` | 1     | Reserved (NT)           | Reserved for Windows                        | ❌       |
+| `0x044` | 1     | Boot signature          | 0x29 = indicates next fields exist          | ⚠️       |
+| `0x045` | 4     | Volume ID               | Random serial number                        | ❌       |
+| `0x049` | 11    | Volume label            | Volume name, padded with spaces             | ❌       |
+| `0x054` | 8     | File system type        | "FAT32 " string                             | ⚠️       |
+| `0x05C` | 420   | Boot code               | Actual bootloader code                      | ✅       |
+| `0x1FE` | 2     | Boot sector signature   | Must be 0x55AA to be recognized as bootable | ✅       |
 
 ### FSInfo
 
@@ -256,15 +257,15 @@ The FAT contains entries, where each entry corresponds to one cluster. The conte
 | :-------------------------- | :-------------------------- |
 | `0x00000000`                | Free cluster                |
 | `0x0FFFFFFF`                | EOC - End Of Chain          |
-| `0x0FFFFFF7`                | Corrupted cluser            |
+| `0x0FFFFFF7`                | Corrupted cluster           |
 | `0x0FFFFFF0` – `0x0FFFFFF6` | Reserved                    |
 | Other                       | Address of the next cluster |
 
-> Only the first 28 bytes are used, the remaining 4 bytes are reserved.
+> Only the first 28 bits are used, the remaining 4 bits are reserved.
 
 ### Cluster
 
-There is two type of cluster, file and directory, each cluster size usually 4096 bytes. A file cluster is simple, it just contain the content of the file that is affected to it. A directory cluster is still simple, they all have this structure :
+There is two type of cluster, file and directory, each cluster size usually 4096 bytes. A file cluster is simple, it just contain the content of the file that is affected to it. A directory cluster is still simple, they follow this structure :
 
 | Offset  | Bytes | Description           |
 | :------ | :---- | :-------------------- |
