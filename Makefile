@@ -7,22 +7,22 @@ SRC_DIR         := src
 BOOT_DIR        := boot
 KERNEL_DIR      := kernel
 LINKER_DIR      := link
-BIN_DIR         := bin
+BUILD_DIR       := build
 
 # Files
-BOOT_FIRST_STAGE     := $(BOOT_DIR)/first_stage/boot.asm
-BOOT_SECOND_STAGE    := $(BOOT_DIR)/second_stage/second_boot.asm
+BOOT_FIRST_STAGE     := $(BOOT_DIR)/mbr.asm
+BOOT_SECOND_STAGE    := $(BOOT_DIR)/second_boot.asm
 KERNEL_C             := $(KERNEL_DIR)/kernel.c
 KERNEL_ENTRY_ASM     := $(KERNEL_DIR)/kernel_entry.asm
 KERNEL_LINKER_SCRIPT := $(LINKER_DIR)/linker.ld
 
 # Output Files
-BOOT_BIN        := $(BIN_DIR)/boot.bin
-SECOND_BOOT_BIN := $(BIN_DIR)/second_boot.bin
-KERNEL_O        := $(BIN_DIR)/kernel.o
-KERNEL_ENTRY_O  := $(BIN_DIR)/kernel_entry.o
-KERNEL_BIN      := $(BIN_DIR)/kernel.bin
-DISK_IMG        := $(BIN_DIR)/disk.img
+BOOT_BIN        := $(BUILD_DIR)/mbr.bin
+SECOND_BOOT_BIN := $(BUILD_DIR)/second_boot.bin
+KERNEL_O        := $(BUILD_DIR)/kernel.o
+KERNEL_ENTRY_O  := $(BUILD_DIR)/kernel_entry.o
+KERNEL_BIN      := $(BUILD_DIR)/kernel.bin
+DISK_IMG        := $(BUILD_DIR)/disk.img
 
 #--------------------#
 #        Main        #
@@ -40,23 +40,23 @@ debug: all
 #      Bootloader      #
 #----------------------#
 
-$(BOOT_BIN): $(BOOT_FIRST_STAGE) | $(BIN_DIR)
+$(BOOT_BIN): $(BOOT_FIRST_STAGE) | $(BUILD_DIR)
 	nasm -f bin $< -o $@
 
-$(SECOND_BOOT_BIN): $(BOOT_SECOND_STAGE) | $(BIN_DIR)
+$(SECOND_BOOT_BIN): $(BOOT_SECOND_STAGE) | $(BUILD_DIR)
 	nasm -f bin $< -o $@
 
 #----------------------#
 #        Kernel        #
 #----------------------#
 
-$(KERNEL_O): $(KERNEL_C) | $(BIN_DIR)
+$(KERNEL_O): $(KERNEL_C) | $(BUILD_DIR)
 	i686-elf-gcc -nostdlib -nostdinc -ffreestanding -c $< -o $@
 
-$(KERNEL_ENTRY_O): $(KERNEL_ENTRY_ASM) | $(BIN_DIR)
+$(KERNEL_ENTRY_O): $(KERNEL_ENTRY_ASM) | $(BUILD_DIR)
 	nasm -f elf $< -o $@
 
-$(KERNEL_BIN): $(KERNEL_ENTRY_O) $(KERNEL_O) | $(BIN_DIR)
+$(KERNEL_BIN): $(KERNEL_ENTRY_O) $(KERNEL_O) | $(BUILD_DIR)
 	i686-elf-ld -T $(KERNEL_LINKER_SCRIPT) -o $@ $^ --oformat binary
 
 #---------------------#
@@ -94,7 +94,7 @@ $(DISK_IMG): $(BOOT_BIN) $(SECOND_BOOT_BIN) $(KERNEL_BIN)
 #---------------------#
 
 clean:
-	rm -rf $(BIN_DIR)/*
+	rm -rf $(BUILD_DIR)/*
 
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)

@@ -79,9 +79,9 @@ KERNEL_ADDR equ 0x3000
 
 %include "boot/display16.asm"
 %include "boot/disk_loader.asm"
-%include "boot/second_stage/gdt.asm"
-%include "boot/second_stage/display32.asm"
-%include "boot/second_stage/switch_protected.asm"
+%include "boot/gdt.asm"
+%include "boot/display32.asm"
+%include "boot/switch_protected.asm"
 
 SECOND_WELLCOME_MSG: db "[SECOND STAGE BOOTLOADER]", ENDL, 0
 LOADING_KERNEL_MSG: db " Loding kernel ...", ENDL, 0
