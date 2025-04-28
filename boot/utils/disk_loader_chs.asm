@@ -1,4 +1,5 @@
-; disk_load:
+; disk_load_chs :
+;
 ; Loads sectors from disk using BIOS interrupt 0x13 (function 0x02).
 ; Expects:
 ;   - DL: drive number (e.g., 0x00 for floppy, 0x80 for HDD)
@@ -9,7 +10,7 @@
 ; If the read fails (carry flag set), or if fewer sectors are read than requested,
 ; it prints an error message and halts in an infinite loop.
 
-disk_load:
+disk_load_chs:
     push dx                            ; Save DX (DH = num sectors, DL = drive number)
 
     mov ah, 0x02                       ; BIOS function 0x02: Read sectors from disk

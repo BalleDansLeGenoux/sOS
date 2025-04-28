@@ -4,21 +4,29 @@
 
 # Directories
 SRC_DIR         := src
+
 BOOT_DIR        := boot
+MBR_DIR         := $(BOOT_DIR)/mbr
+FAT32_DIR       := $(BOOT_DIR)/fat32
+
 KERNEL_DIR      := kernel
 LINKER_DIR      := link
 BUILD_DIR       := build
 
 # Files
-BOOT_FIRST_STAGE     := $(BOOT_DIR)/mbr.asm
-BOOT_SECOND_STAGE    := $(BOOT_DIR)/second_boot.asm
+MBR                  := $(MBR_DIR)/mbr.asm
+VBR                  := $(FAT32_DIR)/vbr.asm
+FS_INFO              := $(FAT32_DIR)/fs_info.asm
+FAT                  := $(FAT32_DIR)/fat.asm
 KERNEL_C             := $(KERNEL_DIR)/kernel.c
 KERNEL_ENTRY_ASM     := $(KERNEL_DIR)/kernel_entry.asm
 KERNEL_LINKER_SCRIPT := $(LINKER_DIR)/linker.ld
 
 # Output Files
-BOOT_BIN        := $(BUILD_DIR)/mbr.bin
-SECOND_BOOT_BIN := $(BUILD_DIR)/second_boot.bin
+MBR_BIN         := $(BUILD_DIR)/mbr.bin
+VBR_BIN         := $(BUILD_DIR)/vbr.bin
+FS_INFO_BIN     := $(BUILD_DIR)/fs_info.bin
+FAT_BIN         := $(BUILD_DIR)/fat.bin
 KERNEL_O        := $(BUILD_DIR)/kernel.o
 KERNEL_ENTRY_O  := $(BUILD_DIR)/kernel_entry.o
 KERNEL_BIN      := $(BUILD_DIR)/kernel.bin
@@ -31,19 +39,25 @@ DISK_IMG        := $(BUILD_DIR)/disk.img
 all: clean $(DISK_IMG)
 
 run: all
-	qemu-system-x86_64 -drive file=$(DISK_IMG),format=raw,if=floppy
+	qemu-system-x86_64 -drive file=$(DISK_IMG),format=raw
 
 debug: all
-	qemu-system-x86_64 -drive file=$(DISK_IMG),format=raw,if=floppy -d int,guest_errors -no-reboot
+	qemu-system-x86_64 -drive file=$(DISK_IMG),format=raw -d int,guest_errors -no-reboot -serial file:debug.log > output.log 2>&1
 
 #----------------------#
 #      Bootloader      #
 #----------------------#
 
-$(BOOT_BIN): $(BOOT_FIRST_STAGE) | $(BUILD_DIR)
+$(MBR_BIN): $(MBR) | $(BUILD_DIR)
 	nasm -f bin $< -o $@
 
-$(SECOND_BOOT_BIN): $(BOOT_SECOND_STAGE) | $(BUILD_DIR)
+$(VBR_BIN): $(VBR) | $(BUILD_DIR)
+	nasm -f bin $< -o $@
+
+$(FS_INFO_BIN): $(FS_INFO) | $(BUILD_DIR)
+	nasm -f bin $< -o $@
+
+$(FAT_BIN): $(FAT) | $(BUILD_DIR)
 	nasm -f bin $< -o $@
 
 #----------------------#
@@ -63,15 +77,19 @@ $(KERNEL_BIN): $(KERNEL_ENTRY_O) $(KERNEL_O) | $(BUILD_DIR)
 #        Image        #
 #---------------------#
 
-$(DISK_IMG): $(BOOT_BIN) $(SECOND_BOOT_BIN) $(KERNEL_BIN)
-	dd if=/dev/zero of=$@ bs=512 count=131072
-	dd if=$(BOOT_BIN) of=$@ conv=notrunc bs=512 seek=0
-	dd if=$(SECOND_BOOT_BIN) of=$@ conv=notrunc bs=512 seek=1
+$(DISK_IMG): $(MBR_BIN) $(VBR_BIN) $(FS_INFO_BIN) $(FAT_BIN) $(KERNEL_BIN)
+	dd if=/dev/zero of=$@ bs=512 count=200000
+	dd if=$(MBR_BIN) of=$@ conv=notrunc bs=512 seek=0
+	dd if=$(MBR_BIN) of=$@ conv=notrunc bs=512 seek=2
+	dd if=$(VBR_BIN) of=$@ conv=notrunc bs=512 seek=20
+	dd if=$(FS_INFO_BIN) of=$@ conv=notrunc bs=512 seek=21
+	dd if=$(VBR_BIN) of=$@ conv=notrunc bs=512 seek=26
+	dd if=$(FS_INFO_BIN) of=$@ conv=notrunc bs=512 seek=27
+	dd if=$(FAT_BIN) of=$@ conv=notrunc bs=512 seek=52
+	dd if=$(FAT_BIN) of=$@ conv=notrunc bs=512 seek=180
 
 	sudo sh -c '\
 		LOOPDEV=$$(losetup -fP --show $@); \
-		echo "Using $$LOOPDEV"; \
-		mkfs.fat -F 32 $${LOOPDEV}p1; \
 		mkdir -p /mnt/tmp; \
 		mount $${LOOPDEV}p1 /mnt/tmp; \
 		cp $(KERNEL_BIN) /mnt/tmp; \
