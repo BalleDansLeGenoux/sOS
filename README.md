@@ -1,4 +1,4 @@
-# - sOS: An OS Development Project -
+# sOS: An OS Development Project
 
 sOS is an operating system development project to help me learn the fundamentals of low-level programming.
 
@@ -6,11 +6,78 @@ sOS is an operating system development project to help me learn the fundamentals
 
 The goal of this project is to understand the basics of operating system development by creating a bootloader and switching to protected mode, using low-level techniques. The project is written in Assembly and low-level C.
 
+Major features of this project are developed on separate branches to facilitate management and the gradual integration of new functionality. Each dedicated branch corresponds to a specific feature, such as the development of a two-stage bootloader or the integration of the FAT32 file system. Once a feature is complete and tested, it will be merged into the main branch. This approach helps organize the code and prevents introducing errors or instability in the main branch before new features are fully ready.
+
 ## Objectives
 
 * Develop a simple bootloader in Assembly.
 * Switch the processor to protected mode and use memory in a more modern way.
 * Create a minimal kernel that will run after the bootloader.
+
+## Required Libraries and Dependencies
+
+This project requires several essential libraries and tools to be correctly configured and integrated in order to build and run successfully. Below is a breakdown of the critical components:
+
+1. **NASM (Netwide Assembler)**:
+   - Used to assemble assembly files like the MBR, VBR, and FAT filesystem modules.
+   - Ensures that all bootloader components are correctly compiled into binary files.
+
+2. **i686-elf-gcc**:
+   - A cross-compiler used to compile C code for the kernel. The `-nostdlib` and `-nostdinc` flags ensure that standard libraries and includes are not used, making the kernel independent from the host environment.
+
+3. **i686-elf-ld**:
+   - The linker used to combine object files into a final kernel binary. It is configured to use a custom linker script (`linker.ld`), ensuring that memory is mapped and structured as required for the kernel to function.
+
+4. **dd (Disk Duplication Tool)**:
+   - Used to create the disk image and copy binary files (MBR, VBR, FAT, kernel) into the correct sectors. This is an essential step for writing the bootloader, filesystem, and kernel into the disk image.
+
+5. **losetup & mount**:
+   - These utilities help map the disk image to a loop device and mount its partitions to copy the kernel onto the first partition. This allows for the disk image to be bootable with the correct kernel and bootloader setup.
+
+6. **QEMU**:
+   - A tool used to emulate a virtual machine to run and test the disk image, making sure that the entire boot process and kernel execution work as expected. It's an essential tool for debugging and testing the OS build in a virtual environment.
+
+Each of these tools is necessary to build the components (bootloader, kernel, filesystem) and combine them into a bootable disk image. Make sure that you have them installed and configured correctly in your build environment.
+
+## How to Execute
+
+To build and run the OS, follow these steps:
+
+1. Clone the repository:
+
+    ```bash
+    git clone https://github.com/BalleDansLeGenoux/sOS
+    cd sOS
+    ```
+
+2. To compile the bootloader and kernel, run the following command:
+
+    ```bash
+    make
+    ```
+
+    This will create a bootable disk image (`build/disk.img`).
+
+3. To run the disk image in a virtual machine (e.g., QEMU), use:
+
+    ```bash
+    make run
+    ```
+
+    This will start the OS using QEMU with the generated disk image.
+
+4. To clean the build artifacts, run:
+
+    ```bash
+    make clean
+    ```
+
+
+# - A simple bootloader to load a simple kernel in c -
+
+## Introduction
+
+First, I started implementing a simple bootloader (first stage), with a basic kernel written in C. I am doing this on a floppy image because it's (I think) the simplest thing to start with—no MBR, partition system, etc. All data is written directly to sectors.
 
 ## 1. Creating the Bootloader
 
@@ -76,7 +143,7 @@ The main reference I used to learn OS development is that web site : [OSDev Wiki
 
 This project is still in development. The bootloader and protected mode switch are working, and the kernel takes control after these steps. The next steps will include adding features to the kernel, such as process management, I/O handling, and advanced memory management.
 
-# - Transition to a two-stage bootloader
+# - Transition to a two-stage bootloader -
 
 ## Why ?
 
@@ -127,11 +194,11 @@ To make this transition, I had several choices to make. First, I had to decide w
 
 ### Stage 1 -> MBR
 
-Coming soon !
+To implement the MBR, it's simple: the MBR searches for the first bootable partition, retrieves its starting sector, and loads the VBR using LBA (Logical Block Addressing). It then jumps to the VBR. Additionally, the partition table is defined, where I specify my FAT32 partition.
 
-### Stage 2 -> VBR
+### Stage 2 -> FAT32
 
-Coming soon !
+This part is more complex. First, I specify the details of the FAT32 partition (see section 3, Technical Details). In these specifications, I reserve some sectors to place a FAT32 parser. Once the parser is loaded, I jump to it and execute it.
 
 ### Stage 3 -> FAT32 parser to find kernel
 

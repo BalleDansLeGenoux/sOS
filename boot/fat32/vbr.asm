@@ -57,7 +57,7 @@ KERNEL_ADDR equ 0x3000
 %include "boot/utils/display16.asm"
 %include "boot/utils/disk_loader_lba.asm"
 
-VBR_MSG: db "[VBR]", ENDL, 0
+VBR_MSG: db "[VBR]", ENDL, "TODO : FAT32 parseur to load kernel", ENDL, 0
 
 times 510-($-$$) db 0
 dw 0xAA55
