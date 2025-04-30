@@ -27,10 +27,13 @@ mbr_start:
     cmp ax, 0x00
     je no_bootable_found          ; If no bootable partition found, jump to error handler
 
+    mov [VBR_SECTOR], ax          ; Store VBR sector
+
     mov bx, VBR_ADDR
-    call disk_load_lba
+    call disk_load_lba            ; Load VBR
 
     mov dl, [BOOT_DRIVE]          ; Pass the boot drive number to the next stage
+    mov ax, [VBR_SECTOR]          ; Pass the VBR sector to the next stage
 
     jmp VBR_ADDR                  ; Jump to the loaded VBR (Volume Boot Record) at 0x1000
 
@@ -50,6 +53,8 @@ no_bootable_found:
 ; ---------------------------------------
 
 BOOT_DRIVE: db 0                  ; Variable to store the boot drive number
+VBR_SECTOR: dw 0                  ; Variable to store the sector where VBR is in disk
+
 VBR_ADDR equ 0x1000               ; Address where VBR (second stage) will be loaded
 
 MBR_MSG: db "[MBR]", ENDL, 0      ; Welcome message string

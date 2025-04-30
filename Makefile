@@ -8,6 +8,7 @@ SRC_DIR         := src
 BOOT_DIR        := boot
 MBR_DIR         := $(BOOT_DIR)/mbr
 FAT32_DIR       := $(BOOT_DIR)/fat32
+PARSER_DIR      := $(BOOT_DIR)/parser
 
 KERNEL_DIR      := kernel
 LINKER_DIR      := link
@@ -18,6 +19,7 @@ MBR                  := $(MBR_DIR)/mbr.asm
 VBR                  := $(FAT32_DIR)/vbr.asm
 FS_INFO              := $(FAT32_DIR)/fs_info.asm
 FAT                  := $(FAT32_DIR)/fat.asm
+PARSER               := $(PARSER_DIR)/parser.asm
 KERNEL_C             := $(KERNEL_DIR)/kernel.c
 KERNEL_ENTRY_ASM     := $(KERNEL_DIR)/kernel_entry.asm
 KERNEL_LINKER_SCRIPT := $(LINKER_DIR)/linker.ld
@@ -27,6 +29,7 @@ MBR_BIN         := $(BUILD_DIR)/mbr.bin
 VBR_BIN         := $(BUILD_DIR)/vbr.bin
 FS_INFO_BIN     := $(BUILD_DIR)/fs_info.bin
 FAT_BIN         := $(BUILD_DIR)/fat.bin
+PARSER_BIN      := $(BUILD_DIR)/parser.bin
 KERNEL_O        := $(BUILD_DIR)/kernel.o
 KERNEL_ENTRY_O  := $(BUILD_DIR)/kernel_entry.o
 KERNEL_BIN      := $(BUILD_DIR)/kernel.bin
@@ -60,6 +63,9 @@ $(FS_INFO_BIN): $(FS_INFO) | $(BUILD_DIR)
 $(FAT_BIN): $(FAT) | $(BUILD_DIR)
 	nasm -f bin $< -o $@
 
+$(PARSER_BIN): $(PARSER) | $(BUILD_DIR)
+	nasm -f bin $< -o $@
+
 #----------------------#
 #        Kernel        #
 #----------------------#
@@ -77,7 +83,7 @@ $(KERNEL_BIN): $(KERNEL_ENTRY_O) $(KERNEL_O) | $(BUILD_DIR)
 #        Image        #
 #---------------------#
 
-$(DISK_IMG): $(MBR_BIN) $(VBR_BIN) $(FS_INFO_BIN) $(FAT_BIN) $(KERNEL_BIN)
+$(DISK_IMG): $(MBR_BIN) $(VBR_BIN) $(FS_INFO_BIN) $(FAT_BIN) $(PARSER_BIN) $(KERNEL_BIN)
 	dd if=/dev/zero of=$@ bs=512 count=200000
 	dd if=$(MBR_BIN) of=$@ conv=notrunc bs=512 seek=0
 	dd if=$(MBR_BIN) of=$@ conv=notrunc bs=512 seek=2
@@ -85,6 +91,7 @@ $(DISK_IMG): $(MBR_BIN) $(VBR_BIN) $(FS_INFO_BIN) $(FAT_BIN) $(KERNEL_BIN)
 	dd if=$(FS_INFO_BIN) of=$@ conv=notrunc bs=512 seek=21
 	dd if=$(VBR_BIN) of=$@ conv=notrunc bs=512 seek=26
 	dd if=$(FS_INFO_BIN) of=$@ conv=notrunc bs=512 seek=27
+	dd if=$(PARSER_BIN) of=$@ conv=notrunc bs=512 seek=28
 	dd if=$(FAT_BIN) of=$@ conv=notrunc bs=512 seek=52
 	dd if=$(FAT_BIN) of=$@ conv=notrunc bs=512 seek=180
 

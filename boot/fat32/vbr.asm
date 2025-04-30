@@ -45,19 +45,32 @@ db "FAT32   "                       ; File system type (8 bytes)
 
 vbr_start:
     mov [BOOT_DRIVE], dl
+    mov [VBR_SECTOR], ax
     
     mov si, VBR_MSG
     call print16
 
-    jmp $
+    mov ax, 28
+    mov bx, PARSER_ADDR
+    call disk_load_lba
 
-BOOT_DRIVE: db 0x00
-KERNEL_ADDR equ 0x3000
+    mov dl, [BOOT_DRIVE]
+    mov ax, $$
+    mov bx, [VBR_SECTOR]
+
+    jmp PARSER_ADDR
 
 %include "boot/utils/display16.asm"
 %include "boot/utils/disk_loader_lba.asm"
 
-VBR_MSG: db "[VBR]", ENDL, "TODO : FAT32 parseur to load kernel", ENDL, 0
+
+
+BOOT_DRIVE: db 0
+VBR_SECTOR: dw 0
+
+PARSER_ADDR equ 0x2000
+
+VBR_MSG: db "[VBR]", ENDL, 0
 
 times 510-($-$$) db 0
 dw 0xAA55

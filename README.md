@@ -8,6 +8,10 @@ The goal of this project is to understand the basics of operating system develop
 
 Major features of this project are developed on separate branches to facilitate management and the gradual integration of new functionality. Each dedicated branch corresponds to a specific feature, such as the development of a two-stage bootloader or the integration of the FAT32 file system. Once a feature is complete and tested, it will be merged into the main branch. This approach helps organize the code and prevents introducing errors or instability in the main branch before new features are fully ready.
 
+## List of branches :
+* master : latest features
+* floppy_img : simple kernel with 2-stage bootloader on floppy image
+
 ## Objectives
 
 * Develop a simple bootloader in Assembly.
